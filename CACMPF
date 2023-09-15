@@ -1,0 +1,9 @@
+ A          R RECACM                    TEXT('ACC MASTER FILE')      
+ A            CUSBID        10          COLHDG('CUSTOMER ID')        
+ A            ACCNUM        20  0       COLHDG('ACCOUNT NO')         
+ A            ACCNAM        20          COLHDG('ACCOUNT NAME')       
+ A            ACCSTS         1          COLHDG('ACC STATUS')         
+ A            TTLCHG        11  2       COLHDG('TOTAL CHARGE')       
+ A            CURBAL        11  2       COLHDG('CURRENT BALANCE')    
+ A          K CUSBID                                                 
+ A          K ACCNUM                                                 
