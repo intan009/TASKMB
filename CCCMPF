@@ -1,0 +1,9 @@
+ A          R RECCCM                    TEXT('CREDIT CARD FILE')     
+ A            CUSBID        10          COLHDG('CUSTOMER ID')        
+ A            CCANUM        20  0       COLHDG('CREDITCARD NUM')     
+ A            ACCNAM        30          COLHDG('ACC NAME')           
+ A            CCASTS         1          COLHDG('STATUS')             
+ A            TTLCCG        11  2       COLHDG('TTL CARD CHARGE')    
+ A            CURLMT        11  2       COLHDG('CUR CARD LIMIT')     
+ A          K CUSBID                                                 
+ A          K CCANUM                                                 
