@@ -1,0 +1,240 @@
+ IDENTIFICATION DIVISION.                                   
+ PROGRAM-ID. TASKMB.                                        
+*----------------------------------------------------       
+*----------------------------------------------------       
+ ENVIRONMENT DIVISION.                                      
+ CONFIGURATION SECTION.                                     
+ SOURCE-COMPUTER. IBM-AS400.                                
+ OBJECT-COMPUTER. IBM-AS400.                                
+ INPUT-OUTPUT SECTION.                                      
+ FILE-CONTROL.                                              
+     SELECT CUEFPF ASSIGN TO DATABASE-CUEFPF                
+            ORGANIZATION   IS SEQUENTIAL                    
+            ACCESS         IS SEQUENTIAL                    
+            FILE STATUS    IS W01-FS-CUEFPF.                
+     SELECT CUSBPF ASSIGN TO DATABASE-CUSBPF                
+            ORGANIZATION   IS INDEXED                       
+            ACCESS         IS DYNAMIC                       
+            RECORD KEY     IS EXTERNALLY-DESCRIBED-KEY      
+            FILE STATUS    IS W01-FS-CUSBPF.                
+     SELECT CCCMPF  ASSIGN TO DATABASE-CCCMPF              
+            ORGANIZATION   IS INDEXED                      
+            ACCESS         IS DYNAMIC                      
+            RECORD KEY     IS EXTERNALLY-DESCRIBED-KEY     
+            FILE STATUS    IS W01-FS-CCCMPF.               
+     SELECT CACMPF  ASSIGN TO DATABASE-CACMPF              
+            ORGANIZATION   IS INDEXED                      
+            ACCESS         IS DYNAMIC                      
+            RECORD KEY     IS EXTERNALLY-DESCRIBED-KEY     
+            FILE STATUS    IS W01-FS-CACMPF.               
+ DATA DIVISION.                              
+ FILE SECTION.                               
+ FD  CUSBPF  LABEL RECORDS ARE STANDARD.     
+ 01  RECIA1.                                 
+     COPY DDS-ALL-FORMAT OF CNFIL-CUSBPF.    
+ FD  CCCMPF  LABEL RECORDS ARE STANDARD.     
+ 01  RECIG1.                                 
+     COPY DDS-ALL-FORMAT OF CNFIL-CCCMPF.    
+ FD  CACMPF  LABEL RECORDS ARE STANDARD.     
+ 01  RECIC1.                                 
+     COPY DDS-ALL-FORMAT OF CNFIL-CACMPF.               
+ FD  CUEFPF LABEL RECORDS ARE STANDARD.                 
+ 01  RECPF1.                                            
+     COPY DDS-ALL-FORMAT OF CNFIL-CUEFPF.               
+ WORKING-STORAGE SECTION.                               
+ 01  W01-STORAGE.                                       
+     03  W01-FS-CUSBPF       PIC X(2)   VALUE SPACES.   
+     03  W01-FS-CCCMPF       PIC X(2)   VALUE SPACES.   
+     03  W01-FS-CACMPF       PIC X(2)   VALUE SPACES.   
+     03  W01-FS-CUEFPF       PIC X(2)   VALUE SPACES.   
+     03  W01-TTLDIF          PIC S9(11)V99 COMP-3  VALUE 0.   
+     03  W01-TTLAVA          PIC S9(11)V99 COMP-3  VALUE 0.   
+     03  W01-TTLCCM          PIC S9(11)V99 COMP-3  VALUE 0.   
+     03  W01-IDX             PIC 9(2)   VALUE ZEROES.         
+     03  W01-START           PIC X(1)   VALUE SPACES.         
+         88  W01-START88                VALUE "Y".            
+                                                              
+*--------------------------------------------------*          
+*  KEY  ARRAYS                                     *          
+*--------------------------------------------------*          
+ 01  W01-ACMARRAY.                                            
+     03  W01-ACMARR          OCCURS 8 TIMES.                  
+         05  W01-ACCNUM      PIC 9(20) VALUE ZEROES.          
+                                                              
+ 01  W01-CCMARRAY.                                            
+     03  W01-CCMARR          OCCURS 8 TIMES.                  
+         05  W01-CCANUM      PIC 9(20) VALUE ZEROES.          
+*                                                             
+ LINKAGE SECTION.                                             
+*---------------                                              
+ PROCEDURE DIVISION.                                 
+*-------------------                                 
+ MAINLINE SECTION.                                   
+ A10-START.                                          
+     OPEN    INPUT CUSBPF CACMPF CCCMPF              
+     OUTPUT  CUEFPF.                                 
+     MOVE  ZEROES TO W01-TTLAVA W01-TTLCCM W01-IDX.  
+     PERFORM B20-CUSBPF THRU B29-EXIT                
+     STOP    RUN.                                    
+*                                                    
+ B20-CUSBPF.                                         
+     PERFORM H10-START      THRU H19-EXIT.           
+     IF  W01-START = "N"                             
+         GO TO B28-CLOSE.                            
+ B21-READNXT.                                        
+     READ    CUSBPF NEXT AT END                      
+             GO TO B28-CLOSE.                        
+     PERFORM H30-START-CACM THRU H39-EXIT.           
+     IF  W01-START88                                 
+         MOVE ZEROES TO W01-IDX            
+         PERFORM B30-CACM THRU B39-EXIT.   
+     PERFORM H40-START-CCCM THRU H49-EXIT. 
+     IF  W01-START88                       
+         MOVE ZEROES TO W01-IDX            
+         PERFORM B40-CCCM THRU B49-EXIT.   
+     PERFORM  M10-CUEFPF  THRU M19-EXIT.   
+     GO      TO B21-READNXT.               
+ B28-CLOSE.                                
+     CLOSE   CUSBPF CACMPF CUEFPF CCCMPF.  
+ B29-EXIT.                                                       
+     EXIT.                                                       
+                                                                 
+ B30-CACM.                                                       
+     READ    CACMPF    NEXT AT END                               
+             GO TO B39-EXIT.                                     
+     IF      CUSBID OF RECACM NOT = CUSBID OF RECCSB             
+             GO TO B39-EXIT.                                     
+     IF      ACCSTS OF RECACM NOT = 'A'                          
+             GO TO B30-CACM.                                     
+     ADD     1 TO W01-IDX.                                       
+     IF      W01-IDX = 4                                         
+             GO TO B39-EXIT.                                     
+             MOVE  ACCNUM OF RECACM TO W01-ACCNUM (W01-IDX).     
+     COMPUTE W01-TTLDIF = CURBAL OF RECACM - TTLCHG OF RECACM.   
+     ADD     W01-TTLDIF TO W01-TTLAVA.                           
+     MOVE  ZEROES TO W01-TTLDIF.                                 
+     GO TO B30-CACM.                                             
+ B39-EXIT.                                                       
+     EXIT.                                                       
+ B40-CCCM.                                                     
+     READ    CCCMPF    NEXT AT END                             
+             GO TO B49-EXIT.                                   
+     IF      CUSBID OF RECCCM NOT = CUSBID OF RECCSB           
+             GO TO B49-EXIT.                                   
+     ADD     1 TO W01-IDX.                                     
+     IF      W01-IDX = 3                                       
+             GO TO B49-EXIT.                                   
+             MOVE  CCANUM OF RECCCM TO W01-CCANUM (W01-IDX).   
+     COMPUTE W01-TTLDIF = CURLMT OF RECCCM - TTLCCG OF RECCCM. 
+     ADD     W01-TTLDIF TO W01-TTLCCM.                         
+     MOVE  ZEROES TO W01-TTLDIF.                               
+     GO TO B40-CCCM.                                           
+ B49-EXIT.                                                     
+     EXIT.                                                     
+                                                               
+ M10-CUEFPF.                                                   
+     IF      W01-ACCNUM (1) = ZEROES                           
+             GO TO M19-EXIT.                                   
+     MOVE    CUSBID OF RECCSB  TO CUSBID OF RECCEF.      
+     MOVE    CUSNAM OF RECCSB  TO CUSNAM OF RECCEF.      
+     MOVE    W01-ACCNUM (1)    TO ACCNO1 OF RECCEF.      
+     MOVE    W01-ACCNUM (2)    TO ACCNO2 OF RECCEF.      
+     MOVE    W01-ACCNUM (3)    TO ACCNO3 OF RECCEF.      
+     MOVE    W01-TTLAVA        TO TTLAVA OF RECCEF.      
+     MOVE    W01-CCANUM (1)    TO CCANO1 OF RECCEF.      
+     MOVE    W01-CCANUM (2)    TO CCANO2 OF RECCEF.      
+     MOVE    W01-TTLCCM        TO TTLCCM OF RECCEF.      
+     WRITE   RECPF1.                                     
+     MOVE ZEROES TO W01-TTLAVA   W01-TTLCCM.             
+     INITIALIZE   W01-ACMARRAY  W01-CCMARRAY.            
+ M19-EXIT.                                               
+     EXIT.                                               
+                                                         
+ H10-START.                                              
+     MOVE    "Y"        TO W01-START.                    
+     MOVE    SPACES     TO CUSBID OF RECCSB.             
+     START   CUSBPF KEY NOT < EXTERNALLY-DESCRIBED-KEY   
+             INVALID KEY MOVE "N" TO W01-START.          
+ H19-EXIT.                                              
+     EXIT.                                              
+                                                        
+ H30-START-CACM.                                        
+     MOVE    "Y"        TO W01-START.                   
+     MOVE    CUSBID OF RECCSB TO CUSBID OF RECACM.      
+     MOVE    ZEROES           TO ACCNUM OF RECACM.      
+     START   CACMPF KEY NOT < EXTERNALLY-DESCRIBED-KEY  
+             INVALID KEY MOVE "N" TO W01-START.         
+ H39-EXIT.                                              
+     EXIT.                                              
+                                                        
+ H40-START-CCCM.                                        
+     MOVE    "Y"        TO W01-START.                   
+     MOVE    CUSBID OF RECCSB TO CUSBID OF RECCCM.      
+     MOVE    ZEROES           TO CCANUM OF RECCCM.      
+     START   CCCMPF KEY NOT < EXTERNALLY-DESCRIBED-KEY  
+             INVALID KEY MOVE "N" TO W01-START.         
+ H49-EXIT.                                              
+     EXIT.                                              
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
