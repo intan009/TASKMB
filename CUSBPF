@@ -1,0 +1,9 @@
+ A                                      UNIQUE                   
+ A          R RECCSB                    TEXT('CUSTOMER FILE')    
+ A            CUSBID        10          COLHDG('CUSTOMER ID')    
+ A            CUSNAM        20          COLHDG('CUSTOMER NAME')  
+ A            CUSADD        30          COLHDG('ADDRESS')        
+ A            CUSTEL        12          COLHDG('TEL NUMBER')     
+ A            BIRTHD         8  0       COLHDG('BIRTHDATE')      
+ A            OPNDTE         8  0       COLHDG('OPEN DATE')      
+ A          K CUSBID                                             
